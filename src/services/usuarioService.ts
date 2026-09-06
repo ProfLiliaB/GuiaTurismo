@@ -103,4 +103,75 @@ export class UsuarioService {
     });
     return usuarios;
   }
+  // Busca o perfil do usuário logado
+  async buscarPerfil(id: number) {
+    const usuario = await prisma.usuario.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        avatar: true,
+        cidade: true,
+        idade: true,
+        profissao: true,
+        instagram: true,
+        facebook: true,
+        youtube: true,
+        site: true,
+        telefone: true,
+        isAdmin: true,
+        criadoEm: true
+      }
+    });
+
+    if (!usuario) {
+      throw new AppError('Usuário não encontrado.', 404);
+    }
+    return usuario;
+  }
+
+  // Atualiza os dados do usuário
+  async atualizarUsuario(id: number, dados: Partial<DadosUsuario>) {
+    const usuarioExiste = await prisma.usuario.findUnique({ where: { id } });
+    if (!usuarioExiste) {
+      throw new AppError('Usuário não encontrado.', 404);
+    }
+
+    let hashSenha = usuarioExiste.senha;
+    if (dados.senhaPlana) {
+      hashSenha = await bcrypt.hash(dados.senhaPlana, 10);
+    }
+
+    const usuarioAtualizado = await prisma.usuario.update({
+      where: { id },
+      data: {
+        nome: dados.nome,
+        email: dados.email,
+        senha: hashSenha,
+        avatar: dados.avatar,
+        cidade: dados.cidade,
+        idade: dados.idade,
+        profissao: dados.profissao,
+        instagram: dados.instagram,
+        facebook: dados.facebook,
+        youtube: dados.youtube,
+        site: dados.site,
+        telefone: dados.telefone,
+      },
+      select: { id: true, nome: true, email: true }
+    });
+
+    return usuarioAtualizado;
+  }
+
+  // Deleta o usuário
+  async deletarUsuario(id: number) {
+    const usuarioExiste = await prisma.usuario.findUnique({ where: { id } });
+    if (!usuarioExiste) {
+      throw new AppError('Usuário não encontrado.', 404);
+    }
+
+    await prisma.usuario.delete({ where: { id } });
+  }
 }

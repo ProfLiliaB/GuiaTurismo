@@ -2,13 +2,17 @@
   "openapi": "3.0.0",
   "info": {
     "title": "API - Sistema Guia de Turismo",
-    "description": "Documentação dos endpoints do backend para o aplicativo Flutter.",
+    "description": "Documentação completa dos endpoints do backend para consumo pelo aplicativo Flutter.",
     "version": "1.0.0"
   },
   "servers": [
     {
+      "url": "https://guiaturismo.onrender.com",
+      "description": "Produção (Render)"
+    },
+    {
       "url": "http://localhost:3000",
-      "description": "Servidor Local de Desenvolvimento"
+      "description": "Localhost"
     }
   ],
   "components": {
@@ -17,57 +21,60 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Insira o token JWT gerado no login."
+        "description": "Insira o token JWT gerado na rota de login."
+      }
+    },
+    "schemas": {
+      "UsuarioCadastro": {
+        "type": "object",
+        "required": ["nome", "email", "senha"],
+        "properties": {
+          "nome": { "type": "string", "example": "Lilia" },
+          "email": { "type": "string", "example": "lilia@teste.com" },
+          "senha": { "type": "string", "example": "senha123" },
+          "avatar": { "type": "string", "nullable": true, "example": "url_da_foto" },
+          "cidade": { "type": "string", "nullable": true, "example": "Ubatuba / SP" },
+          "idade": { "type": "integer", "nullable": true, "example": 28 },
+          "profissao": { "type": "string", "nullable": true, "example": "Desenvolvedora" },
+          "instagram": { "type": "string", "nullable": true },
+          "facebook": { "type": "string", "nullable": true },
+          "youtube": { "type": "string", "nullable": true },
+          "site": { "type": "string", "nullable": true },
+          "telefone": { "type": "string", "nullable": true, "example": "12999999999" }
+        }
+      },
+      "Categoria": {
+        "type": "object",
+        "required": ["nome", "descricao"],
+        "properties": {
+          "nome": { "type": "string", "example": "Praias" },
+          "descricao": { "type": "string", "example": "Destinos no litoral" }
+        }
+      },
+      "Lugar": {
+        "type": "object",
+        "required": ["nome", "descricao", "latitude", "longitude", "categoriaId"],
+        "properties": {
+          "nome": { "type": "string", "example": "Praia Grande" },
+          "descricao": { "type": "string", "example": "Praia movimentada para surf." },
+          "latitude": { "type": "number", "format": "double", "example": -23.4699 },
+          "longitude": { "type": "number", "format": "double", "example": -45.0617 },
+          "categoriaId": { "type": "integer", "example": 1 }
+        }
+      },
+      "Galeria": {
+        "type": "object",
+        "required": ["urlFoto"],
+        "properties": {
+          "urlFoto": { "type": "string", "example": "https://exemplo.com/foto.jpg" }
+        }
       }
     }
   },
   "paths": {
-    "/usuarios": {
-      "post": {
-        "summary": "Cria um novo usuário",
-        "tags": ["Usuários"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "nome": { "type": "string" },
-                  "email": { "type": "string" },
-                  "senha": { "type": "string" },
-                  "avatar": { "type": "string", "nullable": true },
-                  "cidade": { "type": "string", "nullable": true },
-                  "idade": { "type": "integer", "nullable": true },
-                  "profissao": { "type": "string", "nullable": true },
-                  "instagram": { "type": "string", "nullable": true },
-                  "facebook": { "type": "string", "nullable": true },
-                  "youtube": { "type": "string", "nullable": true },
-                  "site": { "type": "string", "nullable": true },
-                  "telefone": { "type": "string", "nullable": true }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": { "description": "Usuário criado com sucesso" },
-          "400": { "description": "Email já cadastrado" }
-        }
-      },
-      "get": {
-        "summary": "Lista todos os usuários",
-        "tags": ["Usuários"],
-        "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "200": { "description": "Lista retornada com sucesso" },
-          "401": { "description": "Não autorizado (Token ausente ou inválido)" }
-        }
-      }
-    },
     "/login": {
       "post": {
-        "summary": "Faz login e retorna o Token JWT",
+        "summary": "Autenticação do usuário",
         "tags": ["Autenticação"],
         "requestBody": {
           "required": true,
@@ -76,94 +83,196 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": { "type": "string" },
-                  "senha": { "type": "string" }
+                  "email": { "type": "string", "example": "lilia@teste.com" },
+                  "senha": { "type": "string", "example": "senha123" }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": { "description": "Login efetuado com sucesso (Retorna o Token)" },
-          "401": { "description": "Credenciais incorretas" }
+          "200": { "description": "Retorna o token JWT e dados básicos" },
+          "401": { "description": "Credenciais inválidas" }
         }
+      }
+    },
+    "/usuarios": {
+      "post": {
+        "summary": "Cria um novo usuário",
+        "tags": ["Usuários"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UsuarioCadastro" }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Usuário criado com sucesso" } }
+      },
+      "get": {
+        "summary": "Lista todos os usuários (Apenas Admin)",
+        "tags": ["Usuários"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Sucesso" } }
+      },
+      "put": {
+        "summary": "Atualiza os dados do próprio usuário",
+        "tags": ["Usuários"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UsuarioCadastro" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Atualizado com sucesso" } }
+      },
+      "delete": {
+        "summary": "Deleta a própria conta",
+        "tags": ["Usuários"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "204": { "description": "Conta deletada" } }
+      }
+    },
+    "/usuarios/perfil": {
+      "get": {
+        "summary": "Visualiza os dados do próprio perfil",
+        "tags": ["Usuários"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Sucesso" } }
       }
     },
     "/categorias": {
       "get": {
         "summary": "Lista todas as categorias",
         "tags": ["Categorias"],
-        "responses": {
-          "200": { "description": "Lista de categorias" }
-        }
+        "responses": { "200": { "description": "Sucesso" } }
+      },
+      "post": {
+        "summary": "Cria uma categoria",
+        "tags": ["Categorias"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Categoria" } } }
+        },
+        "responses": { "201": { "description": "Sucesso" } }
+      }
+    },
+    "/categorias/{id}": {
+      "put": {
+        "summary": "Atualiza uma categoria",
+        "tags": ["Categorias"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Categoria" } } }
+        },
+        "responses": { "200": { "description": "Sucesso" } }
+      },
+      "delete": {
+        "summary": "Deleta uma categoria",
+        "tags": ["Categorias"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Deletado" } }
       }
     },
     "/lugares": {
       "get": {
-        "summary": "Lista os lugares (com paginação)",
+        "summary": "Lista os lugares (Paginação)",
         "tags": ["Lugares"],
         "parameters": [
-          {
-            "in": "query",
-            "name": "pagina",
-            "schema": { "type": "integer" },
-            "description": "Número da página"
-          },
-          {
-            "in": "query",
-            "name": "limite",
-            "schema": { "type": "integer" },
-            "description": "Quantidade de itens por página"
-          }
+          { "in": "query", "name": "pagina", "schema": { "type": "integer" } },
+          { "in": "query", "name": "limite", "schema": { "type": "integer" } }
         ],
-        "responses": {
-          "200": { "description": "Lista de lugares" }
-        }
+        "responses": { "200": { "description": "Sucesso" } }
+      },
+      "post": {
+        "summary": "Cria um novo lugar",
+        "tags": ["Lugares"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Lugar" } } }
+        },
+        "responses": { "201": { "description": "Sucesso" } }
+      }
+    },
+    "/lugares/{id}": {
+      "get": {
+        "summary": "Busca um lugar por ID",
+        "tags": ["Lugares"],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Sucesso" } }
+      },
+      "put": {
+        "summary": "Atualiza um lugar",
+        "tags": ["Lugares"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Lugar" } } }
+        },
+        "responses": { "200": { "description": "Sucesso" } }
+      },
+      "delete": {
+        "summary": "Deleta um lugar",
+        "tags": ["Lugares"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Deletado" } }
+      }
+    },
+    "/lugares/{id}/galeria": {
+      "post": {
+        "summary": "Adiciona uma foto à galeria do lugar",
+        "tags": ["Galeria"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Galeria" } } }
+        },
+        "responses": { "201": { "description": "Sucesso" } }
+      }
+    },
+    "/galeria/{idFoto}": {
+      "delete": {
+        "summary": "Remove uma foto da galeria",
+        "tags": ["Galeria"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "idFoto", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Deletado" } }
       }
     },
     "/favoritos": {
       "get": {
-        "summary": "Lista os lugares favoritos do usuário logado",
+        "summary": "Lista os favoritos do usuário logado",
         "tags": ["Favoritos"],
         "security": [{ "bearerAuth": [] }],
-        "responses": {
-          "200": { "description": "Lista de lugares favoritos" },
-          "401": { "description": "Não autorizado" }
-        }
+        "responses": { "200": { "description": "Sucesso" } }
       }
     },
     "/favoritos/{lugarId}": {
       "post": {
-        "summary": "Adiciona um lugar aos favoritos",
+        "summary": "Favorita um lugar",
         "tags": ["Favoritos"],
         "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "lugarId",
-            "required": true,
-            "schema": { "type": "integer" }
-          }
-        ],
-        "responses": {
-          "201": { "description": "Lugar favoritado com sucesso" }
-        }
+        "parameters": [{ "in": "path", "name": "lugarId", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "201": { "description": "Sucesso" } }
       },
       "delete": {
-        "summary": "Remove um lugar dos favoritos",
+        "summary": "Remove dos favoritos",
         "tags": ["Favoritos"],
         "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "lugarId",
-            "required": true,
-            "schema": { "type": "integer" }
-          }
-        ],
-        "responses": {
-          "200": { "description": "Removido com sucesso" }
-        }
+        "parameters": [{ "in": "path", "name": "lugarId", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Deletado" } }
       }
     }
   }

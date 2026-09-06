@@ -20,6 +20,7 @@ model Usuario {
   youtube   String?
   site      String?
   telefone  String?
+  isAdmin   Boolean    @default(false)
   criadoEm  DateTime   @default(now())
   favoritos Favorito[]
 }

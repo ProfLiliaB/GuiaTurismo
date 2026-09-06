@@ -55,4 +55,43 @@ export class UsuarioController {
       data: usuarios,
     });
   }
+  // Busca o perfil do próprio usuário
+  async perfil(req: Request, res: Response) {
+    const id = req.usuarioId!;
+    const usuario = await usuarioService.buscarPerfil(id);
+
+    res.status(200).json({
+      status: 'success',
+      data: usuario,
+    });
+  }
+
+  // Atualiza o próprio perfil
+  async atualizar(req: Request, res: Response) {
+    const id = req.usuarioId!;
+    const { 
+      nome, email, senha, 
+      avatar, cidade, idade, profissao, 
+      instagram, facebook, youtube, site, telefone 
+    } = req.body;
+
+    const usuarioAtualizado = await usuarioService.atualizarUsuario(id, {
+      nome, email, senhaPlana: senha,
+      avatar, cidade, idade: idade ? Number(idade) : undefined, profissao,
+      instagram, facebook, youtube, site, telefone
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: usuarioAtualizado,
+    });
+  }
+
+  // Deleta a própria conta
+  async deletar(req: Request, res: Response) {
+    const id = req.usuarioId!;
+    await usuarioService.deletarUsuario(id);
+
+    res.status(204).send();
+  }
 }
