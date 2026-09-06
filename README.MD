@@ -34,9 +34,9 @@ O projeto utiliza a seguinte estrutura:
 
 1. Limpar a instalação atual (em caso de conflitos anteriores, exclua a pasta node_modules e o arquivo yarn.lock)
 
-2. Instalar as dependências do projeto:
+2. Instalar as dependências do projeto (produção):
    ```bash
-   yarn add express cors helmet express-rate-limit express-async-errors swagger-ui-express bcryptjs jsonwebtoken pg @prisma/client@7.10.0 @prisma/adapter-pg@7.10.0
+   yarn add express cors helmet express-rate-limit swagger-ui-express bcryptjs jsonwebtoken pg @prisma/client@7.10.0 @prisma/adapter-pg@7.10.0
    ```
 
 3. Instalar as dependências de desenvolvimento (tipagens e CLI):
