@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Usuario {
+  id        Int        @id @default(autoincrement())
+  nome      String
+  email     String     @unique
+  senha     String
+  avatar    String?
+  cidade    String?
+  idade     Int?
+  profissao String?
+  instagram String?
+  facebook  String?
+  youtube   String?
+  site      String?
+  telefone  String?
+  criadoEm  DateTime   @default(now())
+  favoritos Favorito[]
+}
+
+model Categoria {
+  id        Int      @id @default(autoincrement())
+  nome      String   @unique
+  descricao String?
+  lugares   Lugar[]
+}
+
+model Lugar {
+  id          Int        @id @default(autoincrement())
+  nome        String
+  descricao   String
+  latitude    Float?
+  longitude   Float?
+  categoriaId Int
+  categoria   Categoria  @relation(fields: [categoriaId], references: [id])
+  criadoEm    DateTime   @default(now())
+  galeria     Galeria[]
+  favoritos   Favorito[]
+}
+
+model Galeria {
+  id        Int      @id @default(autoincrement())
+  urlFoto   String
+  lugarId   Int
+  lugar     Lugar    @relation(fields: [lugarId], references: [id], onDelete: Cascade)
+}
+
+model Favorito {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int
+  lugarId   Int
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  lugar     Lugar    @relation(fields: [lugarId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, lugarId]) // Um usuário não pode favoritar o mesmo lugar mais de uma vez
+}
