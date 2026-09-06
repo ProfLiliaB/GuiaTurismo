@@ -9,16 +9,13 @@ const lugarController = new LugarController();
 lugarRoutes.get('/lugares', lugarController.listarLugares);
 lugarRoutes.get('/lugares/:id', lugarController.buscarLugar);
 
-// As rotas a partir daqui precisam de um Token JWT válido (Autenticação)
-lugarRoutes.use(authMiddleware);
+// Rotas de criação e edição de Lugar (exigem Token)
+lugarRoutes.post('/lugares', authMiddleware, lugarController.criarLugar);
+lugarRoutes.put('/lugares/:id', authMiddleware, lugarController.atualizarLugar);
+lugarRoutes.delete('/lugares/:id', authMiddleware, lugarController.deletarLugar);
 
-// Rotas de criação e edição de Lugar
-lugarRoutes.post('/lugares', lugarController.criarLugar);
-lugarRoutes.put('/lugares/:id', lugarController.atualizarLugar);
-lugarRoutes.delete('/lugares/:id', lugarController.deletarLugar);
-
-// Rotas de Galeria associadas ao lugar
-lugarRoutes.post('/lugares/:id/galeria', lugarController.adicionarFoto);
-lugarRoutes.delete('/galeria/:idFoto', lugarController.removerFoto);
+// Rotas de Galeria associadas ao lugar (exigem Token)
+lugarRoutes.post('/lugares/:id/galeria', authMiddleware, lugarController.adicionarFoto);
+lugarRoutes.delete('/galeria/:idFoto', authMiddleware, lugarController.removerFoto);
 
 export { lugarRoutes };

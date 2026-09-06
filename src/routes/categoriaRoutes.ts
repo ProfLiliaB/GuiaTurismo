@@ -9,10 +9,8 @@ const categoriaController = new CategoriaController();
 categoriaRoutes.get('/categorias', categoriaController.listar);
 
 // Rotas protegidas (apenas usuários logados podem gerenciar categorias)
-// Aplica o middleware (passa pela verificação de login) em todas as rotas abaixo
-categoriaRoutes.use('/categorias', authMiddleware); 
-categoriaRoutes.post('/categorias', categoriaController.criar);
-categoriaRoutes.put('/categorias/:id', categoriaController.atualizar);
-categoriaRoutes.delete('/categorias/:id', categoriaController.deletar);
+categoriaRoutes.post('/categorias', authMiddleware, categoriaController.criar);
+categoriaRoutes.put('/categorias/:id', authMiddleware, categoriaController.atualizar);
+categoriaRoutes.delete('/categorias/:id', authMiddleware, categoriaController.deletar);
 
 export { categoriaRoutes };
