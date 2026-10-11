@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { LugarService } from '../services/lugarService';
+import { AppError } from '../utils/AppError';
 
 const lugarService = new LugarService();
 
@@ -35,36 +36,48 @@ export class LugarController {
   // Atualiza um lugar existente
   async atualizarLugar(req: Request, res: Response) {
     const id = Number(req.params.id);
-    const dados = req.body; // Pode conter nome, descricao, categoriaId, etc.
-
-    // Converte categoriaId para número, caso seja enviado
+    const dados = req.body; 
     if (dados.categoriaId) {
       dados.categoriaId = Number(dados.categoriaId);
     }
-
     const lugar = await lugarService.atualizarLugar(id, dados);
-
     res.status(200).json({ status: 'success', data: lugar });
   }
 
   // Exclui um lugar
   async deletarLugar(req: Request, res: Response) {
     const id = Number(req.params.id);
-
     const resposta = await lugarService.deletarLugar(id);
-
     res.status(200).json({ status: 'success', data: resposta });
   }
 
   // --- CONTROLES DE GALERIA ---
 
-  // Vincula uma URL de foto a um lugar existente
+  // Adiciona uma foto ao lugar (suporta upload de arquivo físico ou URL em JSON)
   async adicionarFoto(req: Request, res: Response) {
     const lugarId = Number(req.params.id);
-    const { urlFoto } = req.body;
+
+    if (isNaN(lugarId)) {
+      throw new AppError('ID do lugar inválido.', 400);
+    }
+
+    let urlFoto: string | undefined;
+
+    // Se o usuário fez upload de um arquivo físico
+    if (req.file) {
+      // Define a URL base (usa APP_URL se configurada no .env ou descobre pelo host da requisição)
+      const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+      urlFoto = `${baseUrl}/uploads/${req.file.filename}`;
+    } else if (req.body?.urlFoto && typeof req.body.urlFoto === 'string' && req.body.urlFoto.trim() !== '') {
+      // Caso o usuário prefira enviar um link direto da web
+      urlFoto = req.body.urlFoto.trim();
+    }
+
+    if (!urlFoto) {
+      throw new AppError('Envie um arquivo de imagem no campo "foto" ou uma "urlFoto" no corpo da requisição.', 400);
+    }
 
     const foto = await lugarService.adicionarFoto(lugarId, urlFoto);
-
     res.status(201).json({ status: 'success', data: foto });
   }
 
@@ -72,8 +85,13 @@ export class LugarController {
   async removerFoto(req: Request, res: Response) {
     const idFoto = Number(req.params.idFoto);
 
+    if (isNaN(idFoto)) {
+      throw new AppError('ID da foto inválido.', 400);
+    }
+
     const resposta = await lugarService.removerFoto(idFoto);
 
     res.status(200).json({ status: 'success', data: resposta });
   }
 }
+

@@ -1,7 +1,28 @@
+import fs from 'fs';
+import path from 'path';
 import prisma from '../prisma';
 import { AppError } from '../utils/AppError';
+import { UPLOADS_FOLDER } from '../middlewares/uploadMiddleware';
+
+// Função auxiliar para remover arquivo local caso a URL aponte para a pasta /uploads
+function apagarArquivoLocal(urlFoto: string) {
+  try {
+    if (urlFoto && urlFoto.includes('/uploads/')) {
+      const nomeArquivo = urlFoto.split('/uploads/').pop();
+      if (nomeArquivo) {
+        const caminhoCompleto = path.resolve(UPLOADS_FOLDER, nomeArquivo);
+        if (fs.existsSync(caminhoCompleto)) {
+          fs.unlinkSync(caminhoCompleto);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao remover arquivo físico da foto:', error);
+  }
+}
 
 export class LugarService {
+
   // Cria um novo lugar turístico associado a uma categoria
   async criarLugar(nome: string, descricao: string, categoriaId: number, latitude?: number, longitude?: number) {
     // Verifica se a categoria existe antes de tentar associar
@@ -85,13 +106,21 @@ export class LugarService {
     return lugar;
   }
 
-  // Deleta um lugar. Pela configuração 'onDelete: Cascade', as fotos da galeria também serão apagadas no banco.
+  // Deleta um lugar e seus arquivos físicos de fotos associados
   async deletarLugar(id: number) {
-    const lugarExiste = await prisma.lugar.findUnique({ where: { id } });
+    const lugarExiste = await prisma.lugar.findUnique({
+      where: { id },
+      include: { galeria: true },
+    });
 
     if (!lugarExiste) {
       throw new AppError('Lugar não encontrado.', 404);
     }
+
+    // Apaga os arquivos físicos das fotos da galeria salvas no servidor
+    lugarExiste.galeria.forEach((foto) => {
+      apagarArquivoLocal(foto.urlFoto);
+    });
 
     await prisma.lugar.delete({
       where: { id },
@@ -120,13 +149,16 @@ export class LugarService {
     return foto;
   }
 
-  // Remove uma foto específica da galeria
+  // Remove uma foto específica da galeria e o arquivo físico se existir
   async removerFoto(idFoto: number) {
     const foto = await prisma.galeria.findUnique({ where: { id: idFoto } });
 
     if (!foto) {
       throw new AppError('Foto não encontrada na galeria.', 404);
     }
+
+    // Apaga o arquivo físico local no servidor caso pertença a /uploads/
+    apagarArquivoLocal(foto.urlFoto);
 
     await prisma.galeria.delete({
       where: { id: idFoto },

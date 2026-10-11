@@ -7,6 +7,10 @@
   },
   "servers": [
     {
+      "url": "https://guia.liliaborges.com.br",
+      "description": "Produção (Hostinger)"
+    },
+    {
       "url": "https://guiaturismo.onrender.com",
       "description": "Produção (Render)"
     },
@@ -231,13 +235,29 @@
     },
     "/lugares/{id}/galeria": {
       "post": {
-        "summary": "Adiciona uma foto à galeria do lugar",
+        "summary": "Adiciona uma foto à galeria do lugar (Upload de arquivo ou URL)",
         "tags": ["Galeria"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer" } }],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Galeria" } } }
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "foto": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Arquivo de imagem (JPEG, PNG, WEBP)"
+                  }
+                }
+              }
+            },
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Galeria" }
+            }
+          }
         },
         "responses": { "201": { "description": "Sucesso" } }
       }
