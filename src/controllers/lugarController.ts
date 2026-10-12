@@ -36,13 +36,32 @@ export class LugarController {
   // Atualiza um lugar existente
   async atualizarLugar(req: Request, res: Response) {
     const id = Number(req.params.id);
-    const dados = req.body; 
-    if (dados.categoriaId) {
-      dados.categoriaId = Number(dados.categoriaId);
+
+    if (isNaN(id)) {
+      throw new AppError('ID do lugar inválido.', 400);
     }
-    const lugar = await lugarService.atualizarLugar(id, dados);
+
+    const { nome, descricao, categoriaId, latitude, longitude } = req.body;
+
+    // Filtra apenas os campos que podem ser atualizados na tabela (evita erro 500 ao enviar id, galeria, categoria, etc.)
+    const dadosAtualizar: {
+      nome?: string;
+      descricao?: string;
+      categoriaId?: number;
+      latitude?: number;
+      longitude?: number;
+    } = {};
+
+    if (nome !== undefined) dadosAtualizar.nome = String(nome);
+    if (descricao !== undefined) dadosAtualizar.descricao = String(descricao);
+    if (categoriaId !== undefined && !isNaN(Number(categoriaId))) dadosAtualizar.categoriaId = Number(categoriaId);
+    if (latitude !== undefined && !isNaN(Number(latitude))) dadosAtualizar.latitude = Number(latitude);
+    if (longitude !== undefined && !isNaN(Number(longitude))) dadosAtualizar.longitude = Number(longitude);
+
+    const lugar = await lugarService.atualizarLugar(id, dadosAtualizar);
     res.status(200).json({ status: 'success', data: lugar });
   }
+
 
   // Exclui um lugar
   async deletarLugar(req: Request, res: Response) {
