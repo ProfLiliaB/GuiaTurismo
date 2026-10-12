@@ -18,14 +18,22 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     // Extrai a extensão do arquivo original (ex: .jpg)
-    const extensao = path.extname(file.originalname).toLowerCase();
+    let extensao = path.extname(file.originalname).toLowerCase();
+
+    // Se o cliente mobile enviou o arquivo sem extensão, deduz pelo mimetype
+    if (!extensao) {
+      if (file.mimetype === 'image/png') extensao = '.png';
+      else if (file.mimetype === 'image/webp') extensao = '.webp';
+      else extensao = '.jpg';
+    }
+
     // Gera um nome único com timestamp e número aleatório
     const nomeUnico = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extensao}`;
     cb(null, nomeUnico);
   },
 });
 
-// Filtro de tipos de arquivo permitidos
+// Filtro de tipos de arquivo permitidos: valida se a extensão do arquivo é uma imagem aceita
 const fileFilter = (
   req: Express.Request,
   file: Express.Multer.File,
@@ -34,12 +42,15 @@ const fileFilter = (
   const extensoesPermitidas = ['.jpg', '.jpeg', '.png', '.webp'];
   const ext = path.extname(file.originalname).toLowerCase();
 
-  if (extensoesPermitidas.includes(ext) && file.mimetype.startsWith('image/')) {
+  if (extensoesPermitidas.includes(ext)) {
     cb(null, true);
   } else {
     cb(new AppError('Apenas imagens (JPG, JPEG, PNG, WEBP) são permitidas.', 400));
   }
 };
+
+
+
 
 // Middleware do Multer configurado
 export const uploadFoto = multer({
